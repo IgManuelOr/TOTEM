@@ -1,0 +1,894 @@
+﻿<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title - NOSIS</title>
+    @Styles.Render("~/Content/css")
+    @Scripts.Render("~/bundles/modernizr")
+
+</head>
+<body>
+    <div class="navbar navbar-inverse navbar-fixed-top">
+        <div class="container" style="padding: 10px">
+            <div class="navbar-header" style="display: flex; color: white">
+                <div>
+                    <img src="~/Content/nosis.png" style="width:30%; display:block" alt="Sistema de cajeros" />
+                </div>
+                <h2 style="margin-left: 50px; position: relative">Sistema de Registro de Cajas</h2>
+
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="container body-content" style="margin-top:50px">
+        @RenderBody()
+        <hr />
+        <footer>
+            <p>&copy; @DateTime.Now.Year - A lo mejor NOSIS</p>
+        </footer>
+    </div>
+
+
+    <div id="DialogAddCaja" title="Agregar Caja">
+        <input type="number" name="Clientes" value="" placeholder="Clientes en fila" id="ClientesCaja" />
+        <input type="text" name="Modelo" value="" placeholder="Modelo del equipo en caja" id="ModeloCaja" />
+        <input type="text" name="Operador" value="" placeholder="Nombre del operador" id="OperadorCaja" />
+        <button id="BtnConfirmarAdd">Confirmar</button>
+    </div>
+
+    <div id="DialogAddCliente" title="Agregar Cliente">
+        <input type="text" name="NombreCliente" value="" placeholder="Nombre del Cliente" id="NombreCliente" />
+    </div>
+
+    <div id="DialogEditCaja" title="Modificar Caja">
+        <table id="TablaEdit">
+            <!--La carga de datos de esta tabla se da dinamicamente via script-->
+        </table>
+    </div>
+
+    <div id="DialogEditCliente" title="Modificar Cliente">
+        <table id="TablaEditCliente">
+            <!--La carga de datos de esta tabla se da dinamicamente via script-->
+        </table>
+    </div>
+
+    <div id="DialogClientesAsociados" title="Clientes">
+        <table id="TablaClientesAsociados">
+            <!--La carga de datos de esta tabla se da dinamicamente via script-->
+        </table>
+    </div>
+
+    <div id="DialogOk" title="Confirmación">
+        ¡Operación correctamente realizada!
+    </div>
+
+    <div id="DialogShutDown" title="Confirmación">
+        ¿Desea realmente apagar la caja?
+    </div>
+
+    <div id="DialogConfirmDelete" title="Confirmación">
+        ¿Desea realmente borrar la caja?
+    </div>
+
+    <div id="DialogConfirmDeleteCliente" title="Confirmación">
+        ¿Desea realmente borrar el cliente?
+    </div>
+
+    <div id="DialogAsociar" title="Confirmación">
+        ¿Desea realmente asociar los clientes a las cajas de mayor disponibilidad?
+    </div>
+
+    <div id="DialogAtender" title="Confirmación">
+        ¿Desea marcar el ultimo cliente como atendido?
+    </div>
+
+</body>
+</html>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        CargarCajas();
+        CargarClientes();
+
+        $('#DialogOk').dialog({
+            autoOpen: false,
+            modal: true,
+            title: 'CONFIRMACION',
+            width: 160,
+            height: 160,
+            close: function () {
+                location.reload();
+            }
+
+        });
+
+        $('#DialogShutDown').dialog({
+            autoOpen: false,
+            modal: true,
+            title: 'CONFIRMAR',
+            width: 160,
+            height: 160,
+            buttons: [
+                {
+                    text: "Confirmar",
+                    click: function() {
+                        CambiarEstadoCaja();
+                    }
+                }
+            ]
+        });
+
+        $('#DialogAsociar').dialog({
+            autoOpen: false,
+            modal: true,
+            title: 'CONFIRMAR',
+            width: 160,
+            height: 160,
+            buttons: [
+                {
+                    text: "Confirmar",
+                    click: function() {
+                        AsociarClientes();
+                    }
+                }
+            ]
+        });
+        $('#DialogConfirmDelete').dialog({
+            autoOpen: false,
+            modal: true,
+            title: 'CONFIRMAR',
+            width: 160,
+            height: 160,
+            buttons: [
+                {
+                    text: "Confirmar",
+                    click: function() {
+                        BorrarCaja();
+                    }
+                }
+            ]
+        });
+
+        
+        $('#DialogConfirmDeleteCliente').dialog({
+            autoOpen: false,
+            modal: true,
+            title: 'CONFIRMAR',
+            width: 160,
+            height: 160,
+            buttons: [
+                {
+                    text: "Confirmar",
+                    click: function() {
+                        BorrarCliente();
+                    }
+                }
+            ]
+        });
+
+        $('#DialogAtender').dialog({
+            autoOpen: false,
+            modal: true,
+            title: 'CONFIRMAR',
+            width: 200,
+            buttons: [
+                {
+                    text: "Confirmar",
+                    click: function() {
+                        AtenderCliente();
+                    }
+                }
+            ]
+        });
+
+        $('#DialogAddCaja').dialog({
+            autoOpen: false,
+            modal: true,
+            title: 'Agregar Caja',
+            width: 320,
+            height: 240
+        });
+
+        $('#DialogAddCliente').dialog({
+            autoOpen: false,
+            modal: true,
+            title: 'Agregar Cliente',
+            width: 320,
+            height: 240,
+            buttons:
+            [
+                {
+                    text: "Confirmar",
+                    click: function() {
+                        $.ajax({
+                            type: 'POST',
+                            async: true,
+                            url: '/Clientes/InsertClientes',
+                            dataType: 'json',
+                            data: { NombreCliente: $("#NombreCliente").val() },
+                            success: function (data) {
+
+                                $("#DialogOk").dialog("open");
+
+                            }
+                         });
+                    }
+                }
+            ]
+        });
+
+        $('#DialogEditCliente').dialog({
+            autoOpen: false,
+            modal: true,
+            title: 'Editar Cliente',
+            width: 500,
+            open: function () {
+
+                var IdCliente = $("#DialogEditCliente").data('IdCliente')
+                //Busca una tabla correspondiente
+                var tabla = document.getElementById("TablaEditCliente");
+
+                //crea una Row dentro de la tabla
+                var Header = tabla.insertRow(0);
+
+                //Inserir nuevas Celdas para el Header
+                var celda0 = Header.insertCell(0)
+                var celda1 = Header.insertCell(1);
+                var celda2 = Header.insertCell(2);
+                var celda3 = Header.insertCell(3);
+
+                //Adición de títulos a las celdas
+                celda1.innerHTML = "<b>Cliente #</b>";
+                celda2.innerHTML = "<b>Caja Asignada</b>";
+                celda3.innerHTML = "<b>Nombre del Cliente</b>";
+
+                //Ajax para recibir listado de Servicios Recientes
+                $.ajax({
+                    type: 'POST',
+                    async: true,
+                    url: '/Clientes/GetClientes',
+                    dataType: 'json',
+                    data: { IdCliente: IdCliente },
+                    success: function (data) {
+
+                        var tabla = document.getElementById("TablaEditCliente");
+
+                        jQuery.each(data, function (index, item) {
+                            //crea dinamicamente rows para la tabla
+                            var row = tabla.insertRow(index + 1);
+
+                            //Celdas
+                            var celdaItem0 = row.insertCell(0);
+                            var celdaItem1 = row.insertCell(1);
+                            var celdaItem2 = row.insertCell(2);
+                            var celdaItem3 = row.insertCell(3);
+
+                            //valores a inserir en celdas
+                            if (item.idCaja == 0) {
+                                celdaItem2.innerHTML = "NINGUNA";
+                            } else {
+                                celdaItem2.innerHTML = "<select name = \"IdCaja\" id = \"CajaClienteEdit\">";
+
+                                $.ajax({
+                                    type: 'POST',
+                                    async: true,
+                                    url: '/Cajas/GetCajas',
+                                    dataType: 'json',
+                                    success: function (data) {
+                                        var options = document.getElementById("CajaClienteEdit");
+                                        jQuery.each(data, function (index, item) {
+                                            var node = document.createElement("option");
+                                            node.innerHTML = "<option value=\"" + item.idCaja + "\">" + item.idCaja + "</option>"
+                                            options.appendChild(node);
+                                        });
+                                    }
+                                });
+                            }
+                            celdaItem0.innerHTML = "<img src=\"Content\\eraser.png\" width=\"25px\" height=\"25px\" onclick=\"$('#DialogConfirmDeleteCliente').dialog('open');\" >";
+                            celdaItem1.innerHTML = "<a id=\"IdClienteEdit\">" + item.idCliente + "</a>";
+                            celdaItem3.innerHTML = "<input type=\"text\" name=\"Nombre\" value=\"" + item.nombreCliente + "\" placeholder=\"Nombre Cliente\" id=\"NombreClienteEdit\" style=\"width=100% !important\" />";
+                        });
+                    }
+                });
+            },
+            buttons: [
+                {
+                    text: "Confirmar",
+                    click: function() {
+                        EditCliente();
+                    }
+                }
+            ],
+            close: function () {
+                $('#TablaEditCliente').empty();
+            }
+        });
+
+        $('#DialogClientesAsociados').dialog({
+            autoOpen: false,
+            modal: true,
+            title: 'Clientes Asociados',
+            width: 600,
+            open: function () {
+
+                var IdCaja = $("#DialogClientesAsociados").data('IdCaja')
+                //Busca una tabla correspondiente
+                var tabla = document.getElementById("TablaClientesAsociados");
+
+                //crea una Row dentro de la tabla
+                var Header = tabla.insertRow(0);
+
+                //Inserir nuevas Celdas para el Header
+                var celda0 = Header.insertCell(0)
+                var celda1 = Header.insertCell(1);
+                var celda2 = Header.insertCell(2);
+                var celda3 = Header.insertCell(3);
+
+                //Adición de títulos a las celdas
+                celda1.innerHTML = "<b>Cliente #</b>";
+                celda2.innerHTML = "<b>Caja Asignada</b>";
+                celda3.innerHTML = "<b>Nombre del Cliente</b>";
+
+                //Ajax para recibir listado de Servicios Recientes
+                $.ajax({
+                    type: 'POST',
+                    async: true,
+                    url: '/Clientes/GetClientes',
+                    dataType: 'json',
+                    data: { IdCaja: IdCaja },
+                    success: function (data) {
+
+                        var tabla = document.getElementById("TablaClientesAsociados");
+
+                        jQuery.each(data, function (index, item) {
+                            //crea dinamicamente rows para la tabla
+                            var row = tabla.insertRow(index + 1);
+
+                            if (item.estado == 3) {
+                                        var css = {};
+                                        css = { background: 'chartreuse' };
+                                        Object.assign(row.style, css);;
+                            };
+
+                            //Celdas
+                            var celdaItem0 = row.insertCell(0);
+                            var celdaItem1 = row.insertCell(1);
+                            var celdaItem2 = row.insertCell(2);
+                            var celdaItem3 = row.insertCell(3);
+                            var celdaItem4 = row.insertCell(4);
+
+                            //valores a inserir en celdas
+                            if (item.idCaja == 0) {
+                                celdaItem2.innerHTML = "NINGUNA";
+                            } else {
+                                celdaItem2.innerHTML = "<select name = \"IdCaja\" id = \"CajaClienteEdit\">";
+
+                                $.ajax({
+                                    type: 'POST',
+                                    async: true,
+                                    url: '/Cajas/GetCajas',
+                                    dataType: 'json',
+                                    success: function (data) {
+                                        var options = document.getElementById("CajaClienteEdit");
+                                        jQuery.each(data, function (index, item) {
+                                            var node = document.createElement("option");
+                                            node.innerHTML = "<option value=\"" + item.idCaja + "\">" + item.idCaja + "</option>"
+                                            options.appendChild(node);
+                                        });
+                                    }
+                                });
+                                if (item.estado == 3) {
+                                    celdaItem4.innerHTML = "ATENDIDO."
+                                }
+                            }
+                            celdaItem0.innerHTML = "<img src=\"Content\\eraser.png\" width=\"25px\" height=\"25px\" onclick=\"$('#DialogConfirmDeleteCliente').dialog('open');\" >";
+                            celdaItem1.innerHTML = "<a id=\"IdClienteEdit\">" + item.idCliente + "</a>";
+                            celdaItem3.innerHTML = "<input type=\"text\" name=\"Nombre\" value=\"" + item.nombreCliente + "\" placeholder=\"Nombre Cliente\" id=\"NombreClienteEdit\" style=\"width=100% !important\" />";
+                        });
+                    }
+                });
+            },
+            buttons: [
+                {
+                    text: "Confirmar Edición",
+                    click: function() {
+                        EditCliente();
+                    }
+                }
+            ],
+            close: function () {
+                $('#TablaClientesAsociados').empty();
+            }
+        });
+
+        $('#DialogEditCaja').dialog({
+            autoOpen: false,
+            modal: true,
+            title: 'Editar Caja',
+            width: 1200,
+            height: 300,
+            open: function () {
+                console.log($("#DialogEditCaja").data('IdCaja'));
+
+                var IdCaja = $("#DialogEditCaja").data('IdCaja')
+                //Busca una tabla correspondiente
+                var tabla = document.getElementById("TablaEdit");
+
+                //crea una Row dentro de la tabla
+                var Header = tabla.insertRow(0);
+
+                //Inserir nuevas Celdas para el Header
+                var celda0 = Header.insertCell(0)
+                var celda1 = Header.insertCell(1);
+                var celda2 = Header.insertCell(2);
+                var celda3 = Header.insertCell(3);
+                var celda4 = Header.insertCell(4);
+                var celda5 = Header.insertCell(5);
+                var celda6 = Header.insertCell(6);
+                var celda7 = Header.insertCell(7);
+                var celda8 = Header.insertCell(8);
+
+                //Adición de títulos a las celdas
+                celda1.innerHTML = "<b>Caja #</b>";
+                celda2.innerHTML = "<b>Estado caja</b>";
+                celda3.innerHTML = "<b>Clientes en fila</b>";
+                celda4.innerHTML = "<b>Clientes Atendidos</b>";
+                celda5.innerHTML = "<b>Fecha Apertura caja</b>";
+                celda6.innerHTML = "<b>Modelo de la caja</b>";
+                celda7.innerHTML = "<b>Operador</b>";
+                celda8.innerHTML = "<b>Fecha modificacion</b>";
+
+                //Ajax para recibir listado de Servicios Recientes
+                $.ajax({
+                    type: 'POST',
+                    async: true,
+                    url: '/Cajas/GetCajas',
+                    dataType: 'json',
+                    data: { IdCaja: IdCaja },
+                    success: function (data) {
+
+                        var tabla = document.getElementById("TablaEdit");
+
+                        jQuery.each(data, function (index, item) {
+                            //crea dinamicamente rows para la tabla
+                            var row = tabla.insertRow(index + 1);
+
+                            //Celdas
+                            var celdaItem0 = row.insertCell(0);
+                            var celdaItem1 = row.insertCell(1);
+                            var celdaItem2 = row.insertCell(2);
+                            var celdaItem3 = row.insertCell(3);
+                            var celdaItem4 = row.insertCell(4);
+                            var celdaItem5 = row.insertCell(5);
+                            var celdaItem6 = row.insertCell(6);
+                            var celdaItem7 = row.insertCell(7);
+                            var celdaItem8 = row.insertCell(8);
+                            var celdaItem9 = row.insertCell(9);
+                            var celdaItem10 = row.insertCell(10);
+
+                            //valores a inserir en celdas
+                            if (item.estado == 1) {
+                                celdaItem0.innerHTML = "<img src=\"Content\\registerConnected.png\" width=\"25px\" height=\"25px\">";
+                                celdaItem2.innerHTML = "ABIERTA";
+                            } else {
+                                celdaItem1.innerHTML = "<img src=\"Content\\registerDown.png\" width=\"25px\" height=\"25px\">";
+                                celdaItem2.innerHTML = "CERRADA";
+
+                            }
+
+                            celdaItem1.innerHTML = "<a id=\"IdCajaEdit\">" + item.idCaja + "</a>";
+
+                            celdaItem3.innerHTML = "<input type=\"number\" name=\"Clientes\" value=\"" + item.clientes + "\" placeholder=\"Clientes\" id=\"ClientesCajaEdit\" style=\"width=100% !important\" />";
+                            celdaItem4.innerHTML = "<input type=\"number\" name=\"Atendidos\" value=\"" + item.atendidos + "\" placeholder=\"Atendidos\" id=\"AtendidosCajaEdit\" style=\"width=100% !important\" />";
+                            celdaItem5.innerHTML = parseJsonDate(item.fechaApertura);
+                            celdaItem6.innerHTML = "<input type=\"text\" name=\"Modelo\" value=\"" + item.modelo + "\" placeholder=\"Modelo\" id=\"ModeloCajaEdit\" style=\"width=100% !important\" />";
+                            celdaItem7.innerHTML = "<input type=\"text\" name=\"Operador\" value=\"" + item.operador + "\" placeholder=\"Operador\" id=\"OperadorCajaEdit\" style=\"width=100% !important\" />";
+                            celdaItem8.innerHTML = parseJsonDate(item.fechaUltima);
+                            celdaItem9.innerHTML = "<img src=\"Content\\ShutDown.png\" width=\"25px\" height=\"25px\" onclick=\"$('#DialogShutDown').dialog('open');\" >"
+                            celdaItem10.innerHTML = "<img src=\"Content\\registerRemove.png\" width=\"25px\" height=\"25px\" onclick=\"$('#DialogConfirmDelete').dialog('open');\" >"
+                        });
+                    }
+                });
+            },
+            buttons: [
+                {
+                    text: "Confirmar",
+                    click: function() {
+                        EditCaja();
+                    }
+                }
+            ],
+            close: function () {
+                $('#TablaEdit').empty();
+            }
+        });
+
+        function CambiarEstadoCaja() {
+
+             var idCaja = parseInt($("#IdCajaEdit").text()); 
+
+            $.ajax({
+                type: 'POST',
+                async: true,
+                url: '/Cajas/CambiarEstadoCaja',
+                dataType: 'json',
+                data: { IdCaja: idCaja },
+                success: function (data) {
+
+                    $("#DialogOk").dialog("open");
+
+                }
+            });
+        };
+
+        function BorrarCaja() {
+
+             var idCaja = parseInt($("#IdCajaEdit").text()); 
+
+            $.ajax({
+                type: 'POST',
+                async: true,
+                url: '/Cajas/BorrarCaja',
+                dataType: 'json',
+                data: { IdCaja: idCaja },
+                success: function (data) {
+
+                    $("#DialogOk").dialog("open");
+
+                }
+            });
+        };
+
+         function BorrarCliente() {
+
+             var idCliente = parseInt($("#IdClienteEdit").text()); 
+
+            $.ajax({
+                type: 'POST',
+                async: true,
+                url: '/Clientes/DeleteCliente',
+                dataType: 'json',
+                data: { IdCliente: idCliente },
+                success: function (data) {
+
+                    $("#DialogOk").dialog("open");
+
+                }
+            });
+        };
+
+        function EditCaja() {
+
+            var idCaja = parseInt($("#IdCajaEdit").text());
+
+            $.ajax({
+                type: 'POST',
+                async: true,
+                url: '/Cajas/UpdateCajas',
+                dataType: 'json',
+                data: { IdCaja: idCaja, Estado: $("#EstadoCajaEdit").val(), Clientes: $("#ClientesCajaEdit").val(), Atendidos: $("#AtendidosCajaEdit").val(), Modelo: $("#ModeloCajaEdit").val(), Operador: $("#OperadorCajaEdit").val() },
+                //data: { IdCaja: idCaja, EstadoClientes: $("#EstadoCajaEdit").val(), Clientes: $("#ClientesCajaEdit").val(), Atendidos: $("#AtendidosCajaEdit").val(), Modelo: $("#ModeloCajaEdit").val(), Operador: $("#OperadorCajaEdit").val() },
+                success: function (data) {
+
+                    $("#DialogOk").dialog("open");
+
+                }
+            });
+        };
+
+        
+        function EditCliente() {
+
+            var idCaja = parseInt($("#CajaClienteEdit").val()); 
+            var idCliente = parseInt($("#IdClienteEdit").text());
+            var nombreCliente = $("#NombreClienteEdit").val();
+
+            $.ajax({
+                type: 'POST',
+                async: true,
+                url: '/Clientes/UpdateCliente',
+                dataType: 'json',
+                data: { IdCliente: idCliente, NombreCliente: nombreCliente, IdCaja: idCaja },
+                //data: { IdCaja: idCaja, EstadoClientes: $("#EstadoCajaEdit").val(), Clientes: $("#ClientesCajaEdit").val(), Atendidos: $("#AtendidosCajaEdit").val(), Modelo: $("#ModeloCajaEdit").val(), Operador: $("#OperadorCajaEdit").val() },
+                success: function (data) {
+
+                    $("#DialogOk").dialog("open");
+
+                }
+            });
+        };
+
+        $("#DialogAddCaja").hide();
+        $("#DialogOk").hide();
+
+        $("#btninsertcaja").click(function (e) {
+            $("#DialogAddCaja").dialog("open");
+        })
+
+        $("#btnAsociar").click(function (e) {
+            $("#DialogAsociar").dialog("open");
+        })
+
+        $("#BtnAtender").click(function (e) {
+            $("#DialogAtender").dialog("open");
+        })
+
+        $("#imgInsertCliente").click(function (e) {
+            $("#DialogAddCliente").dialog("open");
+        })
+
+        $("#btninsertcliente").click(function (e) {
+            $("#DialogAddCliente").dialog("open");
+        })
+
+        $("#BtnConfirmarAdd").click(function (e) {
+            $.ajax({
+                type: 'POST',
+                async: true,
+                url: '/Cajas/InsertCaja',
+                dataType: 'json',
+                data: { Clientes: $("#ClientesCaja").val(), Modelo: $("#ModeloCaja").val(), Operador: $("#OperadorCaja").val() },
+                success: function (data) {
+
+                    $("#DialogOk").dialog("open");
+
+                }
+            });
+        });
+
+        $("#imgInsertCaja").click(function (e) {
+            $("#DialogAddCaja").dialog("open");
+        })
+
+        function CargarCajas() {
+
+            //Ajax para recibir listado de cajas 
+            $.ajax({
+                type: 'POST',
+                async: true,
+                url: '/Cajas/GetCajas',
+                dataType: 'json',
+                success: function (data) {
+
+                    if (data.length > 0) {
+                                    //Busca una tabla correspondiente
+                        var tabla = document.getElementById("TablaCajas");
+
+                        //crea una Row dentro de la tabla
+                        var Header = tabla.insertRow(0);
+
+                        //Inserir nuevas Celdas para el Header
+                        var celda0 = Header.insertCell(0)
+                        var celda1 = Header.insertCell(1);
+                        var celda2 = Header.insertCell(2);
+                        var celda3 = Header.insertCell(3);
+                        var celda4 = Header.insertCell(4);
+                        var celda5 = Header.insertCell(5);
+                        var celda6 = Header.insertCell(6);
+                        var celda7 = Header.insertCell(7);
+                        var celda8 = Header.insertCell(8);
+                        var celda9 = Header.insertCell(9);
+                        var celda10 = Header.insertCell(10);
+
+                        //Adición de títulos a las celdas
+                        celda2.innerHTML = "<b>Caja #</b>";
+                        celda3.innerHTML = "<b>Estado caja</b>";
+                        celda4.innerHTML = "<b>Clientes en fila</b>";
+                        celda5.innerHTML = "<b>Clientes Atendidos</b>";
+                        celda6.innerHTML = "<b>Fecha Apertura caja</b>";
+                        celda7.innerHTML = "<b>Modelo de la caja</b>";
+                        celda8.innerHTML = "<b>Operador</b>";
+                        celda9.innerHTML = "<b>Fecha modificacion</b>";
+
+                        //Ajax para recibir listado de Servicios Recientes
+                        $.ajax({
+                            type: 'POST',
+                            async: true,
+                            url: '/Cajas/GetCajas',
+                            dataType: 'json',
+                            success: function (data) {
+
+                                var tabla = document.getElementById("TablaCajas");
+
+                                jQuery.each(data, function (index, item) {
+                                    //crea dinamicamente rows para la tabla
+                                    var row = tabla.insertRow(index + 1);
+
+                                    //Celdas
+                                    var celdaItem0 = row.insertCell(0);
+                                    var celdaItem1 = row.insertCell(1);
+                                    var celdaItem2 = row.insertCell(2);
+                                    var celdaItem3 = row.insertCell(3);
+                                    var celdaItem4 = row.insertCell(4);
+                                    var celdaItem5 = row.insertCell(5);
+                                    var celdaItem6 = row.insertCell(6);
+                                    var celdaItem7 = row.insertCell(7);
+                                    var celdaItem8 = row.insertCell(8);
+                                    var celdaItem9 = row.insertCell(9);
+                                    var celdaItem10 = row.insertCell(10);
+                                    var celdaItem11 = row.insertCell(11);
+
+                                    var IdCaja = item.IdCaja
+                                    //valores a inserir en celdas
+                                    celdaItem0.innerHTML = "<img src=\"Content\\Options.png\" width=\"20px\" height=\"20px\" style=\"cursor:\"pointer\" onclick=\"$('#DialogEditCaja').data('IdCaja', " + item.idCaja + ").dialog('open');\" id='BtnOptions'>";
+
+                                    if (item.estado == 1) {
+                                        celdaItem1.innerHTML = "<img src=\"Content\\registerConnected.png\" width=\"25px\" height=\"25px\">";
+                                        celdaItem3.innerHTML = "ABIERTA";
+                                        if (item.clientesAsociados.length > 0) {
+                                            celdaItem10.innerHTML = "<img src=\"Content\\SiCliente.png\" width=\"20px\" height=\"20px\" style=\"cursor:'pointer'\" onclick=\"$('#DialogClientesAsociados').data('IdCaja', " + item.idCaja + ").dialog('open');\" id='BtnClientes'>";
+                                            celdaItem11.innerHTML = "<button id=\"BtnAtender\" onclick=\"$('#DialogAtender').data('IdCaja', " + item.idCaja + ").dialog('open');\" id='BtnAtender'>Atender Cliente</button>";
+                                        } else {
+                                            celdaItem10.innerHTML = "<img src=\"Content\\NoCliente.png\" width=\"20px\" height=\"20px\" style=\"cursor:\"pointer\" id='BtnNoClientes'>";
+                                        }
+                                    } else if (item.estado == 2) {
+                                        celdaItem1.innerHTML = "<img src=\"Content\\registerDown.png\" width=\"25px\" height=\"25px\">";
+                                        celdaItem3.innerHTML = "CERRADA";
+                                    }
+ 
+                                    celdaItem2.innerHTML = item.idCaja;
+
+                                    celdaItem4.innerHTML = item.clientes;
+                                    celdaItem5.innerHTML = item.atendidos;
+                                    celdaItem6.innerHTML = parseJsonDate(item.fechaApertura);
+                                    celdaItem7.innerHTML = item.modelo;
+                                    celdaItem8.innerHTML = item.operador;
+                                    celdaItem9.innerHTML = parseJsonDate(item.fechaApertura);
+
+
+
+
+                                });
+                            }
+                        });
+                    }
+
+                  
+                }
+            });
+
+
+        }
+
+        function CargarClientes() {
+
+            //Ajax para recibir listado de cajas 
+            $.ajax({
+                type: 'POST',
+                async: true,
+                url: '/Clientes/GetClientes',
+                dataType: 'json',
+                success: function (data) {
+
+                    if (data.length > 0) {
+                                    //Busca una tabla correspondiente
+                        var tabla = document.getElementById("TablaClientes");
+
+                        //crea una Row dentro de la tabla
+                        var Header = tabla.insertRow(0);
+
+                        //Inserir nuevas Celdas para el Header
+                        var celda0 = Header.insertCell(0)
+                        var celda1 = Header.insertCell(1);
+                        var celda2 = Header.insertCell(2);
+                        var celda3 = Header.insertCell(3);
+                        var celda4 = Header.insertCell(4);
+                        var celda5 = Header.insertCell(5);
+
+                        //Adición de títulos a las celdas
+                        celda2.innerHTML = "<b>Cliente #</b>";
+                        celda3.innerHTML = "<b>Caja Asignada</b>";
+                        celda4.innerHTML = "<b>Nombre del Cliente</b>";
+
+                        //Ajax para recibir listado de Clientes
+                        $.ajax({
+                            type: 'POST',
+                            async: true,
+                            url: '/Clientes/GetClientes',
+                            dataType: 'json',
+                            success: function (data) {
+
+                                var tabla = document.getElementById("TablaClientes");
+
+                                jQuery.each(data, function (index, item) {
+                                    //crea dinamicamente rows para la tabla
+                                    var row = tabla.insertRow(index + 1);
+
+                                    if (item.estado == 3) {
+                                        var css = {};
+                                        css = { background: 'chartreuse' };
+                                        Object.assign(row.style, css);;
+                                    };
+
+                                    //Celdas
+                                    var celdaItem0 = row.insertCell(0);
+                                    var celdaItem1 = row.insertCell(1);
+                                    var celdaItem2 = row.insertCell(2);
+                                    var celdaItem3 = row.insertCell(3);
+                                    var celdaItem4 = row.insertCell(4);
+                                    var celdaItem5 = row.insertCell(5);
+
+                                    var IdCaja = item.IdCaja
+                                    var IdCliente = item.IdCliente
+
+                                    //valores a inserir en celdas
+                                    celdaItem0.innerHTML = "<img src=\"Content\\Options.png\" width=\"20px\" height=\"20px\" style=\"cursor:\"pointer\" onclick=\"$('#DialogEditCliente').data('IdCliente', " + item.idCliente + ").dialog('open');\" id='BtnOptionsCliente'>";
+ 
+                                    celdaItem2.innerHTML = item.idCliente;
+                                    celdaItem3.innerHTML = item.idCaja;
+                                    celdaItem4.innerHTML = item.nombreCliente;
+
+                                    if (item.estado == 3) {
+                                        celdaItem5.innerHTML = "ATENDIDO";
+                                    }
+                                });
+                            }
+                        });
+                    }
+
+                  
+                }
+            });
+
+
+        }
+
+        function AsociarClientes() {
+           
+            //Ajax para recibir listado de cajas 
+            $.ajax({
+                type: 'POST',
+                async: true,
+                url: '/Clientes/AsociarClientes',
+                dataType: 'json',
+                success: function (data) {
+
+                    $("#DialogOk").dialog("open");
+
+                }
+            });
+
+
+        }
+
+        function AtenderCliente() {
+            var IdCaja = $("#DialogAtender").data('IdCaja')
+
+            //Ajax para recibir listado de cajas 
+            $.ajax({
+                type: 'POST',
+                async: true,
+                url: '/Clientes/AtenderCliente',
+                data: { IdCaja: IdCaja },
+                dataType: 'json',
+                success: function (data) {
+
+                    $("#DialogOk").dialog("open");
+
+                }
+            });
+        }
+
+        function parseJsonDate(fecha) {
+            var dateString = fecha.substr(6);
+            var currentTime = new Date(parseInt(dateString));
+            var month = currentTime.getMonth() + 1;
+            var day = currentTime.getDate();
+            var year = currentTime.getFullYear();
+            var date = day + "/" + month + "/" + year;
+            return date;
+        }
+    });
+
+</script>

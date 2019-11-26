@@ -1,0 +1,43 @@
+﻿@{
+    ViewBag.Title = "Cajas";
+}
+
+@if (ViewBag.Cajas.Count < 1)
+{
+    <div class="jumbotron">
+        <img src="~/Content/register.png" style="width: 15%; margin-left: 42.5%" alt="Cajas" />
+        <p class="lead" style="text-align: center">Parece que no hay cajas registradas.</p>
+        <button id="btninsertcaja" style="margin-left:45%">Inserir Caja</button>
+    </div>
+}
+else
+{
+    <div class="jumbotron">
+        <img src="~/Content/registerAdd.png" style="width: 35px; height: 35px; cursor: pointer; margin: 10px" id="imgInsertCaja" alt="Agregar Caja" />
+
+        <table class="table" id="TablaCajas">
+            <!--La carga de datos de esta tabla se da dinamicamente via script-->
+        </table>
+    </div>
+
+}
+
+@if (ViewBag.Clientes.Count < 1)
+{
+    <div class="jumbotron">
+        <img src="~/Content/AddCliente.png" style="width: 15%; margin-left: 42.5%" alt="Cajas" />
+        <p class="lead" style="text-align: center">Parece que no hay clientes registrados.</p>
+        <button id="btninsertcliente" style="margin-left:45%">Inserir Cliente</button>
+    </div>
+}
+else
+{
+<div class="jumbotron">
+    <button id="btnAsociar">Asociar Clientes</button>
+    <button id="imgInsertCliente">Agregar Cliente</button>
+
+    <table class="table" id="TablaClientes">
+        <!--La carga de datos de esta tabla se da dinamicamente via script-->
+    </table>
+</div>
+}
